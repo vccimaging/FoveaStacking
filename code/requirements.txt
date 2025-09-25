@@ -1,0 +1,18 @@
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch
+torchvision
+torchaudio
+
+scipy
+numpy<2.0
+matplotlib
+scikit-image
+wandb
+tqdm
+transformers
+opencv-python 
+h5py
+einops
+
+ffmpeg-python
+pytorch-msssim

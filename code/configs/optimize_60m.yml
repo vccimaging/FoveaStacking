@@ -1,0 +1,15 @@
+
+lens:
+  path: './lenses/DPP_AC254_60m.json'
+  lr: 
+    zern: 2e-4
+
+n_grid: 32
+n_grid_roi: 8 
+
+train:
+  epochs: 100
+  epochs_roi: 20
+  seed: 26
+
+img_res: [1024,1024]
