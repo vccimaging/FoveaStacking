@@ -50,7 +50,11 @@ python opt_DPP_ROI.py --ROI 0.6 0.6 0.4 0.4
 
 `--n_dpps` specifies the number of DPP patterns to be jointly optimized. All DPPs are initialized and optimized together to adaptively specialize in different regions.
 
-https://github.com/user-attachments/assets/3227b3cb-5e62-41c4-97d4-74664f90f1dd
+
+
+https://github.com/user-attachments/assets/115ce17b-e528-41f9-8cb8-7d0438f66a24
+
+
 
 ``` bash
 cd code
@@ -96,10 +100,16 @@ Please consider citing our work if you find this codebase useful.
 
 ```bibtex
 @article{mao2025fovea,
-      title={Fovea Stacking: Imaging with Dynamic Localized Aberration Correction},
-      author={Mao, Shi and Mishra, Yogeshwar and Heidrich, Wolfgang},
-      journal={arXiv preprint arXiv:2506.00716},
-      year={2025}
+      title     = {Fovea Stacking: Imaging with Dynamic Localized Aberration Correction},
+      author    = {Mao, Shi and Mishra, Yogeshwar and Heidrich, Wolfgang},
+      journal   = {ACM Transactions on Graphics (TOG)},
+      year      = {2025},
+      volume    = {44},
+      number    = {6},
+      articleno = {258},
+      month     = {dec},
+      doi       = {10.1145/3763278},
+      publisher = {ACM}
 }
 ```
 
