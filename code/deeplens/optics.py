@@ -272,7 +272,7 @@ class Lensgroup(DeepObj):
                 H,W = self.sensor_res
                 WH = torch.tensor([W,H]).to(self.device)
             elif roi_type == 'rel':
-                WH = torch.tensor([2,2]).to(self.device)
+                WH = torch.tensor([0,0]).to(self.device)
             bias = WH - bias # flip the bias to revert the top-left sampling to bottom-right sampling
 
         # convert to img coordinates (physical space) in 2D
@@ -703,7 +703,7 @@ class Lensgroup(DeepObj):
             if pts_sensor is None:
                 grid_size = [grid,grid] if isinstance(grid, int) else grid
                 # sample points on sensor plane, starting from top-left corner to bottom-right corner
-                pts_sensor = self.sample_pts_sensor(grid_size,roi=roi_rel, roi_type="rel", align_corner=align_corner, distribution=distribution, flip=False) # shape [grid, grid, 3]
+                pts_sensor = self.sample_pts_sensor(grid_size,roi=roi_rel, roi_type="rel", align_corner=align_corner, distribution=distribution, flip = True) # shape [grid, grid, 3]
             else:
                 assert pts_sensor.shape[-1] == 3, "pts_sensor should be of shape [N, 3]."
             
@@ -723,7 +723,7 @@ class Lensgroup(DeepObj):
             valid_index = torch.where(valid)[0]
             pts_obj_valid = pts_obj[valid_index] # shape [N_valid, 3]
         
-        psfs_valid, ptc_sensor_valid,pts_stats = self.psf_rgb(pts_obj=pts_obj_valid, ks=ks, spp=spp,stats_only=stats_only,sep_rgb=sep_rgb) # of shape [N_valid, 3, ks, ks]
+        psfs_valid, ptc_sensor_valid,pts_stats = self.psf_rgb(pts_obj=pts_obj_valid, ks=ks, spp=spp,stats_only=stats_only,sep_rgb=sep_rgb, flip = True) # of shape [N_valid, 3, ks, ks]
         
         if valid.all():
             psfs = psfs_valid
@@ -752,7 +752,7 @@ class Lensgroup(DeepObj):
         return psfs, ptc_sensor, pts_stats, valid_index
         
         
-    def psf_rgb(self, pts_obj, ks=31, spp=GEO_SPP, stats_only=False,sep_rgb=False):
+    def psf_rgb(self, pts_obj, ks=31, spp=GEO_SPP, stats_only=False,sep_rgb=False,flip=True):
         """ Compute RGB point PSF. This function is differentiable.
         
         Args:
@@ -761,6 +761,7 @@ class Lensgroup(DeepObj):
             spp (int): Sample per pixel. Defaults to 2048.
             stats_only (bool): Only return the MSE of the point source. Defaults to False.
             sep_rgb (bool): Whether to separate RGB PSF using different center. Defaults to False.
+            flip (bool, optional): Whether to flip the x and y coordinates of integrated PSF. Defaults to True.
 
         Returns:
             psf: Shape of [N, ks, ks, C] or [ks, ks, C].
@@ -775,7 +776,7 @@ class Lensgroup(DeepObj):
         else: # use the same PSF center for all RGB channels
             ptc_sensor,valid = self.proj_obj2sensor(pts_obj) # shape [N, 3]
         for wvln in WAVE_RGB:
-            psf,ptc,point_stats = self.psf_wvln(pts_obj=pts_obj, ptc_sensor=ptc_sensor, wvln=wvln, ks=ks, spp=spp,stats_only=stats_only)
+            psf,ptc,point_stats = self.psf_wvln(pts_obj=pts_obj, ptc_sensor=ptc_sensor, wvln=wvln, ks=ks, spp=spp,stats_only=stats_only,flip=flip) # psf shape of [N, ks, ks], ptc shape of [N, 3]
             psfs.append(psf)
             ptcs.append(ptc)
             for k,v in point_stats.items():
@@ -790,7 +791,7 @@ class Lensgroup(DeepObj):
 
         return psf, ptc_sensor, pts_stats
 
-    def psf_wvln(self, pts_obj, ptc_sensor=None, ks=7, wvln=DEFAULT_WAVE, spp=GEO_SPP,stats_only=False):
+    def psf_wvln(self, pts_obj, ptc_sensor=None, ks=7, wvln=DEFAULT_WAVE, spp=GEO_SPP,stats_only=False,flip=True):
         """ Single wvln incoherent PSF calculation.
 
         Args:
@@ -799,6 +800,7 @@ class Lensgroup(DeepObj):
             ks (int, optional): Output kernel size. Defaults to 7.
             spp (int, optional): Sample per pixel. For diff ray tracing, usually kernel_size^2. Defaults to 2048.
             stats_only (bool, optional): Only return the MSE of the point source. Defaults to False.
+            flip (bool, optional): Whether to flip the x and y coordinates of integrated PSF. Defaults to True.
 
         Returns:
             psf: Shape of [N, ks, ks] or [ks, ks]. PSF of the point source.
@@ -835,6 +837,9 @@ class Lensgroup(DeepObj):
         
         if single_point:
             psf = psf.squeeze(0)
+            
+        if flip:
+            psf = torch.flip(psf, [-2, -1]) # flip the PSF to get the correct orientation
 
         return psf, ptc_sensor, pts_stats
 
